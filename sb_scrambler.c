@@ -10,6 +10,7 @@
  *   for suggesting LADSPA plugins as a project.
  */
 
+
 //----------------
 //-- INCLUSIONS --
 //----------------
@@ -17,6 +18,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "ladspa.h"
+#include "xorgens.h"
+
 
 //-----------------------
 //-- DEFINED CONSTANTS --
@@ -24,22 +27,31 @@
 /*
  * These are the port numbers for the plugin
  */
-#define XXX_INPUT 0
-#define XXX_OUTPUT 1
+// left channel input
+#define SCRAMBLER_INPUT_LEFT 0
+// right channel output
+#define SCRAMBLER_INPUT_RIGHT 1
+// left channel input
+#define SCRAMBLER_OUTPUT_LEFT 2
+// right channel output
+#define SCRAMBLER_OUTPUT_RIGHT 3
 
 /*
  * Other constants
  */
 // the plugin's unique ID given by Richard Furse (ladspa@muse.demon.co.uk)
-#define UNIQUE_ID XXX
+#define UNIQUE_ID 4304
 // number of ports involved
-#define PORT_COUNT XXX
+#define PORT_COUNT 4
+
 
 //-------------------------
 //-- FUNCTION PROTOTYPES --
 //-------------------------
 
-XXX
+// gets a random unsigned long integer
+unsigned long GetRandomNaturalNumber(unsigned long lower_bound, unsigned long upper_bound)
+
 
 //--------------------------------
 //-- STRUCT FOR PORT CONNECTION --
@@ -47,9 +59,12 @@ XXX
 
 typedef struct {
 	// data locations for the input & output audio ports
-	LADSPA_Data * Input;
-	LADSPA_Data * Output;
-} XXX;
+	LADSPA_Data * Input_Left;
+	LADSPA_Data * Input_Right;
+	LADSPA_Data * Output_Left;
+	LADSPA_Data * Output_Right;
+} Scrambler;
+
 
 //---------------
 //-- FUNCTIONS --
@@ -60,16 +75,16 @@ typedef struct {
  * This function returns a LADSPA_Handle (which is a void * -- a pointer to
  * anything).
  */
-LADSPA_Handle instantiate_XXX(const LADSPA_Descriptor * Descriptor,
+LADSPA_Handle instantiate_Scrambler(const LADSPA_Descriptor * Descriptor,
 											  unsigned long sample_rate)
 {
-	XXX * XXX;
+	Scrambler * scrambler;
 	
-	// allocate space for a XXX struct instance
-	XXX = (XXX *) malloc(sizeof(XXX));
+	// allocate space for a Scrambler struct instance
+	scrambler = (Scrambler *) malloc(sizeof(Scrambler));
 	
 	// send the LADSPA_Handle to the host.  If malloc failed, NULL is returned.
-	return XXX;
+	return scrambler;
 }
 
 //-----------------------------------------------------------------------------
@@ -79,18 +94,29 @@ LADSPA_Handle instantiate_XXX(const LADSPA_Descriptor * Descriptor,
  * For example, the output port should be "connected" to the place in memory where
  * that sound data to be played is located.
  */
-void connect_port_to_XXX(LADSPA_Handle instance, unsigned long Port, LADSPA_Data * data_location)
+void connect_port_to_Scrambler(LADSPA_Handle instance, unsigned long Port, LADSPA_Data * data_location)
 {
-	XXX * XXX;
+	Scrambler * scrambler;
 	
-	// cast the (void *) instance to (XXX *) and set it to local pointer
-	XXX = (XXX *) instance;
+	// cast the (void *) instance to (Scrambler *) and set it to local pointer
+	scrambler = (Scrambler *) instance;
 	
 	// direct the appropriate data pointer to the appropriate data location
-	if (Port == XXX_INPUT)
-		XXX->Input = data_location;
-	else if (Port == XXX_OUTPUT)
-		XXX->Output = data_location;
+	switch (Port)
+	{
+		case SCRAMBLER_INPUT_LEFT :
+			Scrambler->Input_Left = data_location;
+			break;
+		case SCRAMBLER_INPUT_RIGHT :
+			Scrambler->Input_Right = data_location;
+			break;
+		case SCRAMBLER_OUTPUT_LEFT :
+			Scrambler->Output_Left = data_location;
+			break;
+		case SCRAMBLER_OUTPUT_RIGHT :
+			Scrambler->Output_Right = data_location;
+			break;	
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -98,42 +124,41 @@ void connect_port_to_XXX(LADSPA_Handle instance, unsigned long Port, LADSPA_Data
 /*
  * Here is where the rubber hits the road.  The actual sound manipulation
  * is done in run().
- * XXX
+ * What is basically does is takes the block of samples and reorders them
+ * in random order.
  */
-void run_XXX(LADSPA_Handle instance, unsigned long sample_count)
+void run_Scrambler(LADSPA_Handle instance, unsigned long sample_count)
 {
-	XXX * XXX = (XXX *) instance;
+	Scrambler * scrambler = (Scrambler *) instance;
 
 	/*
 	 * NOTE: these special cases should never happen, but you never know--like
 	 * if someone is developing a host program and it has some bugs in it, it
 	 * might pass some bad data.
 	 */
-	if (sample_count XXX)
+	if (sample_count <= 1)
 	{
-		printf("\nXXX");
+		printf("\nA sample count of 0 or 1 was sent to plugin.");
 		printf("\nPlugin not executed.\n");
 		return;
 	}
-	if (!XXX)
+	if (!scrambler)
 	{
 		printf("\nPlugin received NULL pointer for plugin instance.");
 		printf("\nPlugin not executed.\n");
 		return;
 	}
-	if (XXX->sample_rate XXX)
-	{
-		printf("\nXXX");
-		printf("\nPlugin not executed.\n");
-		return;
-	}
 
-	LADSPA_Data * input;			// to point to the input stream
-	LADSPA_Data * output;		// to point to the output stream
+	LADSPA_Data * input_left;		// to point to the left channel input stream
+	LADSPA_Data * input_right;		// to point to the right channel input stream
+	LADSPA_Data * output_left;		// to point to the left channel output stream
+	LADSPA_Data * output_right;	// to point to the right channel output stream
 
 	// link the local pointers to their appropriate streams passed in through instance
-	input = XXX->Input;
-	output = XXX->Output;
+	input_left = scrambler->Input_Left;
+	input_right = scrambler->Input_Right;
+	output_left = scrambler->Output_Left;
+	output_right = scrambler->Output_Right;
 
 	XXX
 }
@@ -144,7 +169,7 @@ void run_XXX(LADSPA_Handle instance, unsigned long sample_count)
  * Frees dynamic memory associated with the plugin instance.  The host
  * better send the right pointer in or there's gonna be a leak!
  */
-void cleanup_XXX(LADSPA_Handle instance)
+void cleanup_Scrambler(LADSPA_Handle instance)
 {
 	if (instance)
 		free(instance);
@@ -156,7 +181,7 @@ void cleanup_XXX(LADSPA_Handle instance)
  * Global LADSPA_Descriptor variable used in _init(), ladspa_descriptor(),
  * and _fini().
  */
-LADSPA_Descriptor * XXX_descriptor = NULL;
+LADSPA_Descriptor * Scrambler_descriptor = NULL;
 
 
 /*
@@ -166,17 +191,17 @@ LADSPA_Descriptor * XXX_descriptor = NULL;
 void _init()
 {
 	/*
-	 * allocate memory for XXX_descriptor (it's just a pointer at this point).
+	 * allocate memory for Scrambler_descriptor (it's just a pointer at this point).
 	 * in other words create an actual LADSPA_Descriptor struct instance that
-	 * XXX_descriptor will point to.
+	 * Scrambler_descriptor will point to.
 	 */
-	XXX_descriptor = (LADSPA_Descriptor *) malloc(sizeof(LADSPA_Descriptor));
+	Scrambler_descriptor = (LADSPA_Descriptor *) malloc(sizeof(LADSPA_Descriptor));
 	
 	// make sure malloc worked properly before initializing the struct fields
-	if (XXX_descriptor)
+	if (Scrambler_descriptor)
 	{
 		// assign the unique ID of the plugin given by Richard Furse
-		XXX_descriptor->UniqueID = UNIQUE_ID;
+		Scrambler_descriptor->UniqueID = UNIQUE_ID;
 		
 		/*
 		 * assign the label of the plugin.
@@ -184,7 +209,7 @@ void _init()
 		 * NOTE: in case you were wondering, strdup() from the string library makes a duplicate
 		 * string of the argument and returns the duplicate's pointer (a char *).
 		 */
-		XXX_descriptor->Label = strdup("XXX");
+		Scrambler_descriptor->Label = strdup("Scrambler");
 		
 		/*
 		 * assign the special property of the plugin, which is any of the three
@@ -192,53 +217,55 @@ void _init()
 		 * and LADSPA_PROPERTY_HARD_RT_CAPABLE.  They are just ints (1, 2, and 4,
 		 * respectively).  See ladspa.h for what they actually mean.
 		 */
-		XXX_descriptor->Properties = LADSPA_PROPERTY_HARD_RT_CAPABLE;
+		Scrambler_descriptor->Properties = LADSPA_PROPERTY_HARD_RT_CAPABLE;
 		
 		// assign the plugin name
-		XXX_descriptor->Name = strdup("XXX");
+		Scrambler_descriptor->Name = strdup("Scrambler");
 		
 		// assign the author of the plugin
-		XXX_descriptor->Maker = strdup("Tyler Hayes");
+		Scrambler_descriptor->Maker = strdup("Tyler Hayes (tgh@pdx.edu)");
 		
 		/*
 		 * assign the copyright info of the plugin (NOTE: use "None" for no copyright
 		 * as per ladspa.h)
 		 */
-		XXX_descriptor->Copyright = strdup("GPL");
+		Scrambler_descriptor->Copyright = strdup("GPL");
 		
 		/*
 		 * assign the number of ports for the plugin.
 		 */
-		XXX_descriptor->PortCount = PORT_COUNT;
+		Scrambler_descriptor->PortCount = PORT_COUNT;
 		
 		LADSPA_PortDescriptor * temp_descriptor_array;	// used for allocating and initailizing a
 																		// LADSPA_PortDescriptor array (which is
-																		// an array of ints) since XXX_descriptor->
+																		// an array of ints) since Scrambler_descriptor->
 																		// PortDescriptors is a const *.
 		
 		// allocate space for the temporary array with a length of the number of ports (PortCount)
 		temp_descriptor_array = (LADSPA_PortDescriptor *) calloc(PORT_COUNT, sizeof(LADSPA_PortDescriptor));
 		
 		/*
-		* set the instance LADSPA_PortDescriptor array (PortDescriptors) pointer to
-		* the location temp_descriptor_array is pointing at.
-		*/
-		XXX_descriptor->PortDescriptors = (const LADSPA_PortDescriptor *) temp_descriptor_array;
+		 * set the instance LADSPA_PortDescriptor array (PortDescriptors) pointer to
+		 * the location temp_descriptor_array is pointing at.
+		 */
+		Scrambler_descriptor->PortDescriptors = (const LADSPA_PortDescriptor *) temp_descriptor_array;
 		
 		/*
 		 * set the port properties by ORing specific bit masks defined in ladspa.h.
 		 *
-		 * this first one gives the first port the properties that tell the host that
-		 * this port takes input and is an audio port (not a control port).
+		 * these first two give the input ports the properties that tell the host that
+		 * the ports takes input and are audio ports (not control ports).
 		 */
-		temp_descriptor_array[XXX_INPUT] = LADSPA_PORT_INPUT | LADSPA_PORT_AUDIO;
+		temp_descriptor_array[SCRAMBLER_INPUT_LEFT] = LADSPA_PORT_INPUT | LADSPA_PORT_AUDIO;
+		temp_descriptor_array[SCRAMBLER_INPUT_RIGHT] = LADSPA_PORT_INPUT | LADSPA_PORT_AUDIO;
 		
 		/*
-		 * this gives the second port the properties that tell the host that this port is
-		 * an output port and that it is an audio port (I don't see any situation where
-		 * one might be an output port, but not an audio port...).
+		 * this gives the output ports the properties that tell the host that these ports
+		 * are output ports and that they are audio ports (I don't see any situation where
+		 * one might be an output port but not an audio port...).
 		 */
-		temp_descriptor_array[XXX_OUTPUT] = LADSPA_PORT_OUTPUT | LADSPA_PORT_AUDIO;
+		temp_descriptor_array[SCRAMBLER_OUTPUT_LEFT] = LADSPA_PORT_OUTPUT | LADSPA_PORT_AUDIO;
+		temp_descriptor_array[SCRAMBLER_OUTPUT_RIGHT] = LADSPA_PORT_OUTPUT | LADSPA_PORT_AUDIO;
 		
 		/*
 		 * set temp_descriptor_array to NULL for housekeeping--we don't need that local
@@ -248,57 +275,61 @@ void _init()
 		
 		char ** temp_port_names;	// temporary local variable (which is a pointer to an array
 											// of arrays of characters) for the names of the ports since
-											// XXX_descriptor->PortNames is a const char * const *.
+											// Scrambler_descriptor->PortNames is a const char * const *.
 
 		// allocate the space for two port names
 		temp_port_names = (char **) calloc(PORT_COUNT, sizeof(char *));
 		
 		/*
-		* set the instance PortNames array pointer to the location temp_port_names
-		* is pointing at.
-		*/
-		XXX_descriptor->PortNames = (const char **) temp_port_names;
+		 * set the instance PortNames array pointer to the location temp_port_names
+		 * is pointing at.
+		 */
+		Scrambler_descriptor->PortNames = (const char **) temp_port_names;
 		
-		// set the name of the input port
-		temp_port_names[XXX_INPUT] = strdup("Input");
+		// set the name of the input ports
+		temp_port_names[SCRAMBLER_INPUT_LEFT] = strdup("Input Left Channel");
+		temp_port_names[SCRAMBLER_INPUT_RIGHT] = strdup("Input Right Channel");
 		
-		// set the name of the ouput port
-		temp_port_names[XXX_OUTPUT] = strdup("Output");
+		// set the name of the ouput ports
+		temp_port_names[SCRAMBLER_OUTPUT_LEFT] = strdup("Output Left Channel");
+		temp_port_names[SCRAMBLER_OUTPUT_RIGHT] = strdup("Output Right Channel");
 		
 		// reset temp variable to NULL for housekeeping
 		temp_port_names = NULL;
 		
 		LADSPA_PortRangeHint * temp_hints;	// temporary local variable (pointer to a
-														// PortRangeHint struct) since XXX_descriptor->
+														// PortRangeHint struct) since Scrambler_descriptor->
 														// PortRangeHints is a const *.
 		
 		// allocate space for two port hints (see ladspa.h for info on 'hints')									
 		temp_hints = (LADSPA_PortRangeHint *) calloc(PORT_COUNT, sizeof(LADSPA_PortRangeHint));
 		
 		/*
-		* set the instance PortRangeHints pointer to the location temp_hints
-		* is pointed at.
-		*/
-		XXX_descriptor->PortRangeHints = (const LADSPA_PortRangeHint *) temp_hints;
+		 * set the instance PortRangeHints pointer to the location temp_hints
+		 * is pointed at.
+		 */
+		Scrambler_descriptor->PortRangeHints = (const LADSPA_PortRangeHint *) temp_hints;
 		
 		/*
 		 * set the port hint descriptors (which are ints).
 		 */
-		temp_hints[XXX_INPUT].HintDescriptor = 0;
-		temp_hints[XXX_OUTPUT].HintDescriptor = 0;
+		temp_hints[SCRAMBLER_INPUT_LEFT].HintDescriptor = 0;
+		temp_hints[SCRAMBLER_INPUT_RIGHT].HintDescriptor = 0;
+		temp_hints[SCRAMBLER_OUTPUT_LEFT],HintDescriptor = 0;
+		temp_hints[SCRAMBLER_OUTPUT_RIGHT].HintDescriptor = 0;
 		
 		// reset temp variable to NULL for housekeeping
 		temp_hints = NULL;
 		
 		// set the instance's function pointers to appropriate functions
-		XXX_descriptor->instantiate = instantiate_XXX;
-		XXX_descriptor->connect_port = connect_port_to_XXX;
-		XXX_descriptor->activate = NULL;
-		XXX_descriptor->run = run_XXX;
-		XXX_descriptor->run_adding = NULL;
-		XXX_descriptor->set_run_adding_gain = NULL;
-		XXX_descriptor->deactivate = NULL;
-		XXX_descriptor->cleanup = cleanup_XXX;
+		Scrambler_descriptor->instantiate = instantiate_Scrambler;
+		Scrambler_descriptor->connect_port = connect_port_to_Scrambler;
+		Scrambler_descriptor->activate = NULL;
+		Scrambler_descriptor->run = run_Scrambler;
+		Scrambler_descriptor->run_adding = NULL;
+		Scrambler_descriptor->set_run_adding_gain = NULL;
+		Scrambler_descriptor->deactivate = NULL;
+		Scrambler_descriptor->cleanup = cleanup_Scrambler;
 	}
 }
 
@@ -313,7 +344,7 @@ void _init()
 const LADSPA_Descriptor * ladspa_descriptor(unsigned long index)
 {
 	if (index == 0)
-		return XXX_descriptor;
+		return Scrambler_descriptor;
 	else
 		return NULL;
 }
@@ -327,27 +358,59 @@ const LADSPA_Descriptor * ladspa_descriptor(unsigned long index)
  */
 void _fini()
 {
-	if (XXX_descriptor)
+	if (Scrambler_descriptor)
 	{
-		free((char *) XXX_descriptor->Label);
-		free((char *) XXX_descriptor->Name);
-		free((char *) XXX_descriptor->Maker);
-		free((char *) XXX_descriptor->Copyright);
-		free((LADSPA_PortDescriptor *) XXX_descriptor->PortDescriptors);
+		free((char *) Scrambler_descriptor->Label);
+		free((char *) Scrambler_descriptor->Name);
+		free((char *) Scrambler_descriptor->Maker);
+		free((char *) Scrambler_descriptor->Copyright);
+		free((LADSPA_PortDescriptor *) Scrambler_descriptor->PortDescriptors);
 		
 		/*
 		 * the for loop here is kind of unnecessary since the number of ports
 		 * was hard coded for this plugin as 2, but whatever.
 		 */
 		int i = 0;
-		for(i = 0; i < XXX_descriptor->PortCount; ++i)
-			free((char *)(XXX_descriptor->PortNames[i]));
+		for(i = 0; i < Scrambler_descriptor->PortCount; ++i)
+			free((char *)(Scrambler_descriptor->PortNames[i]));
 		
-		free((char **) XXX_descriptor->PortNames);
-		free((LADSPA_PortRangeHint *) XXX_descriptor->PortRangeHints);
+		free((char **) Scrambler_descriptor->PortNames);
+		free((LADSPA_PortRangeHint *) Scrambler_descriptor->PortRangeHints);
 		
-		free(XXX_descriptor);
+		free(Scrambler_descriptor);
 	}
+}
+
+//-----------------------------------------------------------------------------
+
+/*
+ * This function uses Richard Brent's uniform random number generator (see
+ * comments in the function) to get a random unsigned long integer.  It is
+ * seeded with the current time's seconds and nanoseconds.
+ */
+unsigned long GetRandomNaturalNumber(unsigned long lower_bound, unsigned long upper_bound)
+{
+	// get the current time to seed the generator
+	struct timeval current_time;
+	gettimeofday(&current_time, NULL);
+
+	/*
+	 * This next line uses a uniform random number generator by Richard Brent.
+	 * (http://wwwmaths.anu.edu.au/~brent/random.html)
+	 * which is licensed under the GNU Public License v2.
+	 * See xorgens.c and xorgens.h for the source code.  Many thanks
+	 * to Richard Brent.
+	 *
+	 * NOTE: the tv_sec and tv_usec members of the timeval struct are
+	 * long integers that represent the current time in seconds and
+	 * nanoseconds, respectively, since Jan. 1, 1970.  They are used
+	 * here to seed the generator.  The generator is called with
+	 * xor4096i(), which, unlike the C standard generator, is seeded
+	 * and returns a number with the same call.
+	 */
+	return lower_bound
+			+ (xor4096i((unsigned long)(current_time.tv_usec * current_time.tv_sec))
+			% (upper_bound - lower_bound + 1));
 }
 
 // ------------------------------- EOF ----------------------------------------
