@@ -19,27 +19,27 @@
 
 CC	=	gcc
 CFLAGS	=	-Wall -O3 -fPIC
-LDFLAGS =	-nostartfiles -shared -Wl,-Bsymbolic # -lc -lm -lrt -lpthread
-
+LDFLAGS =	-nostartfiles -shared -Wl,-Bsymbolic
 LADSPA_PATH =	/usr/lib/ladspa	# change these 2 variables to match
 UNINSTALL = /usr/lib/ladspa/sb_*	# your LADSPA_PATH environment
 											# variable (type 'echo $LADSPA_PATH'
 											# at your shell prompt)
 
-PLUGINS	=	XXX.so
+PLUGINS	=	sb_scrambler.so
 
 # ----------------------------------------------------
 
 all: $(PLUGINS)
 
-sb_XXX.o: sb_XXX.c ladspa.h
-	$(CC) $(CFLAGS) -c sb_XXX.c
+sb_scrambler.o: sb_scrambler.c xorgens.c ladspa.h xorgens.h
+	$(CC) $(CFLAGS) -c sb_scrambler.c
+	$(CC) $(CFLAGS) -c xorgens.c
 
-sb_XXX.so: sb_XXX.o
-	$(CC) $(LDFLAGS) -o sb_XXX.so sb_XXX.o
+sb_scrambler.so: sb_scrambler.o xorgens.o
+	$(CC) $(LDFLAGS) -o sb_scrambler.so sb_scrambler.o xorgens.o
 
-install: sb_XXX.so
-	cp sb_XXX.so $(LADSPA_PATH)
+install: sb_scrambler.so
+	cp sb_scrambler.so $(LADSPA_PATH)
 
 uninstall:
 	rm -f $(UNINSTALL)
