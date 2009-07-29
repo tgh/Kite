@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
 #include "ladspa.h"
 #include "xorgens.h"
 
@@ -50,7 +51,7 @@
 //-------------------------
 
 // gets a random unsigned long integer
-unsigned long GetRandomNaturalNumber(unsigned long upper_bound)
+unsigned long GetRandomNaturalNumber(unsigned long upper_bound);
 
 
 //--------------------------------
@@ -105,16 +106,16 @@ void connect_port_to_Scrambler(LADSPA_Handle instance, unsigned long Port, LADSP
 	switch (Port)
 	{
 		case SCRAMBLER_INPUT_LEFT :
-			Scrambler->Input_Left = data_location;
+			scrambler->Input_Left = data_location;
 			break;
 		case SCRAMBLER_INPUT_RIGHT :
-			Scrambler->Input_Right = data_location;
+			scrambler->Input_Right = data_location;
 			break;
 		case SCRAMBLER_OUTPUT_LEFT :
-			Scrambler->Output_Left = data_location;
+			scrambler->Output_Left = data_location;
 			break;
 		case SCRAMBLER_OUTPUT_RIGHT :
-			Scrambler->Output_Right = data_location;
+			scrambler->Output_Right = data_location;
 			break;	
 	}
 }
@@ -157,7 +158,7 @@ void run_Scrambler(LADSPA_Handle instance, unsigned long total_samples)
 	unsigned long in_index = 0;
 	unsigned long out_index = 0;
 
-	// for the number of samples scrambled so far
+	// for the number of samples scrambled so far and remaining
 	unsigned long samples_processed = 0;
 	unsigned long samples_remaining = 0;
 	
@@ -336,7 +337,7 @@ void _init()
 		 */
 		temp_hints[SCRAMBLER_INPUT_LEFT].HintDescriptor = 0;
 		temp_hints[SCRAMBLER_INPUT_RIGHT].HintDescriptor = 0;
-		temp_hints[SCRAMBLER_OUTPUT_LEFT],HintDescriptor = 0;
+		temp_hints[SCRAMBLER_OUTPUT_LEFT].HintDescriptor = 0;
 		temp_hints[SCRAMBLER_OUTPUT_RIGHT].HintDescriptor = 0;
 		
 		// reset temp variable to NULL for housekeeping
