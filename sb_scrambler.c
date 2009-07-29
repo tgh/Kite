@@ -50,7 +50,7 @@
 //-------------------------
 
 // gets a random unsigned long integer
-unsigned long GetRandomNaturalNumber(unsigned long lower_bound, unsigned long upper_bound)
+unsigned long GetRandomNaturalNumber(unsigned long upper_bound)
 
 
 //--------------------------------
@@ -127,7 +127,7 @@ void connect_port_to_Scrambler(LADSPA_Handle instance, unsigned long Port, LADSP
  * What is basically does is takes the block of samples and reorders them
  * in random order.
  */
-void run_Scrambler(LADSPA_Handle instance, unsigned long sample_count)
+void run_Scrambler(LADSPA_Handle instance, unsigned long total_samples)
 {
 	Scrambler * scrambler = (Scrambler *) instance;
 
@@ -136,7 +136,7 @@ void run_Scrambler(LADSPA_Handle instance, unsigned long sample_count)
 	 * if someone is developing a host program and it has some bugs in it, it
 	 * might pass some bad data.
 	 */
-	if (sample_count <= 1)
+	if (total_samples <= 1)
 	{
 		printf("\nA sample count of 0 or 1 was sent to plugin.");
 		printf("\nPlugin not executed.\n");
@@ -148,19 +148,40 @@ void run_Scrambler(LADSPA_Handle instance, unsigned long sample_count)
 		printf("\nPlugin not executed.\n");
 		return;
 	}
+	
+	// buffer pointers
+	LADSPA_Data * input;
+	LADSPA_Data * output;
+	
+	// buffer indexes
+	unsigned long in_index = 0;
+	unsigned long out_index = 0;
 
-	LADSPA_Data * input_left;		// to point to the left channel input stream
-	LADSPA_Data * input_right;		// to point to the right channel input stream
-	LADSPA_Data * output_left;		// to point to the left channel output stream
-	LADSPA_Data * output_right;	// to point to the right channel output stream
-
-	// link the local pointers to their appropriate streams passed in through instance
-	input_left = scrambler->Input_Left;
-	input_right = scrambler->Input_Right;
-	output_left = scrambler->Output_Left;
-	output_right = scrambler->Output_Right;
-
-	XXX
+	// for the number of samples scrambled so far
+	unsigned long samples_processed = 0;
+	unsigned long samples_remaining = 0;
+	
+	while (samples_processed < total_samples)
+	{
+		samples_remaining = total_samples - samples_processed;
+		
+		input = scrambler->Input_Left;
+		output = scrambler->Output_Left;
+		
+		in_index = GetRandomNaturalNumber(samples_remaining);
+	
+		output[out_index] = input[in_index];
+		input[in_index] = input[samples_remaining - 1];
+		
+		input = scrambler->Input_Right;
+		output = scrambler->Output_Right;
+		
+		output[out_index] = input[in_index];
+		input[in_index] = input[samples_remaining - 1];
+		
+		++samples_processed;
+		++out_index;
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -388,7 +409,7 @@ void _fini()
  * comments in the function) to get a random unsigned long integer.  It is
  * seeded with the current time's seconds and nanoseconds.
  */
-unsigned long GetRandomNaturalNumber(unsigned long lower_bound, unsigned long upper_bound)
+unsigned long GetRandomNaturalNumber(unsigned long upper_bound)
 {
 	// get the current time to seed the generator
 	struct timeval current_time;
@@ -408,9 +429,13 @@ unsigned long GetRandomNaturalNumber(unsigned long lower_bound, unsigned long up
 	 * xor4096i(), which, unlike the C standard generator, is seeded
 	 * and returns a number with the same call.
 	 */
-	return lower_bound
-			+ (xor4096i((unsigned long)(current_time.tv_usec * current_time.tv_sec))
-			% (upper_bound - lower_bound + 1));
+	unsigned long rand_num;
+	// seed the generator and retrieve the random number
+	rand_num = xor4096i((unsigned long)(current_time.tv_usec * current_time.tv_sec));
+	// force the random number to within the boundaries
+	rand_num = rand_num % upper_bound;
+	
+	return rand_num;
 }
 
 // ------------------------------- EOF ----------------------------------------
