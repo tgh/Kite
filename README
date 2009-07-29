@@ -1,14 +1,9 @@
-RINGER (part of the StudioBlood LADSPA plugin package, hence the sb_ prefix)
+SCRAMBLER (part of the StudioBlood LADSPA plugin package, hence the sb_ prefix)
 -------
 July 29, 2009. Tyler Hayes. Portland, OR.
 
-Ringer is an audio effect plugin using LADPSA (Linux Audio Developers Simple
-Plugin API).  The results of this effect are similar to a ring modulator.
-What it does is take the first sample from the input buffer, makes a number
-of copies (specified by the user from 5 to 200) to the output buffer, skips
-that same amount of samples in the input buffer, and repeats until the input
-buffer is exhausted.  The higher the number of copies, the more the wavefile
-looks like a city skyline when you zoom in on the samples.
+Scarmbler is an audio effect plugin using LADPSA (Linux Audio Developers Simple
+Plugin API).  It basically takes each block of samples and reorders them randomly.
 
 It is written in C because the API is in C, and licensed under the GPL v3,
 because it's an easy choice when one doesn't want to take the time to
@@ -18,8 +13,8 @@ Thanks to Richard Furse and company for creating ladspa.h, and thanks to Bart
 Massey at Portland State University for suggesting LADSPA plugins as a good
 open source project to work on.  He also helped me get the correct flags in
 the Makefile in order to produce a working shared object file.
-
-This sentence in this README file is completely pointless.
+Also thanks to Richard Brent for his uniform random number generator.
+(http://wwwmaths.anu.edu.au/~brent/random.html)
 
 I am still a student programmer at the time of this writing, so some of the comments
 in the source code are detailed and directed at the beginner as well.  Hopefully
