@@ -2,7 +2,7 @@ SCRAMBLER (part of the StudioBlood LADSPA plugin package, hence the sb_ prefix)
 -------
 July 29, 2009. Tyler Hayes. Portland, OR.
 
-Scarmbler is an audio effect plugin using LADPSA (Linux Audio Developers Simple
+Scrambler is an audio effect plugin using LADPSA (Linux Audio Developers Simple
 Plugin API).  It basically takes each block of samples and reorders them randomly.
 
 It is written in C because the API is in C, and licensed under the GPL v3,
