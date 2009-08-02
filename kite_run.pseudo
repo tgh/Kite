@@ -47,6 +47,8 @@ while output index < total samples
 	// append the sub-block to the output buffer for left channel
 	unsigned long output_start = output index
 	input index = start position
+	input = kite->input_left
+	output = kite->output_left
 	while (input index < end position)				<----------------------- these loops are the same--make them a seperate function CopySubBlock()
 		output[output index] = input[input index]													|
 		++output index																						|
