@@ -44,6 +44,9 @@
 #define UNIQUE_ID 4304
 // number of ports involved
 #define PORT_COUNT 4
+// named flags for on/off (used in run())
+#define ON 1
+#define OFF 0
 
 
 //-------------------------
@@ -59,6 +62,8 @@ unsigned long GetRandomNaturalNumber(unsigned long upper_bound);
 //--------------------------------
 
 typedef struct {
+	// the samples per second of the sound
+	unsigned long sample_rate;
 	// data locations for the input & output audio ports
 	LADSPA_Data * Input_Left;
 	LADSPA_Data * Input_Right;
@@ -83,7 +88,9 @@ LADSPA_Handle instantiate_Kite(const LADSPA_Descriptor * Descriptor,
 	
 	// allocate space for a Kite struct instance
 	kite = (Kite *) malloc(sizeof(Kite));
-	
+	// set the instance's sample rate
+	if (kite)
+		kite->sample_rate = sample_rate;
 	// send the LADSPA_Handle to the host.  If malloc failed, NULL is returned.
 	return kite;
 }
@@ -150,38 +157,73 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
 		return;
 	}
 	
+	// set the minimum size of the random sub-blocks to 0.25 seconds
+	const unsigned long MIN_BLOCK_SIZE = (unsigned long) (0.25 * kite->sample_rate);
+	// set the maximum size of the random sub-block to 2 seconds
+	const unsigned long MAX_BLOCK_SIZE = 2 * kite->sample_rate;
 	// buffer pointers
-	LADSPA_Data * input;
-	LADSPA_Data * output;
-	
+	LADSPA_Data * input = NULL;
+	LADSPA_Data * output = NULL;
 	// buffer indexes
 	unsigned long in_index = 0;
 	unsigned long out_index = 0;
-
-	// for the number of samples scrambled so far and remaining
-	unsigned long samples_processed = 0;
-	unsigned long samples_remaining = 0;
+	// index points for the sub-blocks of random sizes
+	unsigned long block_start_position = 0;
+	unsigned long block_end_position = 0;
+	// random number upper and lower bounds
+	unsigned long rand_num_lower_bound = 0;
+	unsigned long rand_num_upper_bound = 0;
+	// flag for whether the sub-block should be reversed (I wich C had boolean types)
+	short reverse = OFF;
+	// the number of samples left to process (chop up into sub-blocks)
+	unsigned long samples_remaining = total_samples;
 	
-	while (samples_processed < total_samples)
+	while (out_index < total_samples)
 	{
-		samples_remaining = total_samples - samples_processed;
+		rand_num_lower_bound = MIN_BLOCK_SIZE;
+		rand_num_upper_bound = samples_remaining - MIN_BLOCK_SIZE - 1;
 		
+		if (samples_remaining <= MIN_BLOCK_SIZE
+			 || rand_num_upper_bound <= rand_num_lower_bound)
+		{
+			block_start_position = 0;
+			block_end_position = samples_remaining - 1;
+		}
+		else if (rand_num_upper_bound < rand_num_lower_bound + MIN_BLOCK_SIZE)
+		{
+			block_start_position = GetRandomNaturalNumber(rand_num_lower_bound,
+																		 rand_num_upper_bound);
+			block_end_position = samples_remaining - 1;
+		}
+		else
+		{
+			block_start_position = GetRandomNaturalNumber(rand_num_lower_bound,
+																		 rand_num_upper_bound);
+			rand_num_lower_bound = block_start_position + MIN_BLOCK_SIZE;
+			rand_num_upper_bound = samples_remaining - 1;
+			block_end_position = GetRandomNaturalNumber(rand_num_lower_bound,
+																	  rand_num_upper_bound);
+		}
+		
+		reverse = DecideReverse();
+		
+		if (reverse == ON)
+			ApplyReverse(kite, block_start_position, block_end_position);
+		
+		// append the sub-block to the output buffer for the left channel
+		unsigned long out_start = out_index;
 		input = kite->Input_Left;
 		output = kite->Output_Left;
-		
-		in_index = GetRandomNaturalNumber(samples_remaining);
-	
-		output[out_index] = input[in_index];
-		input[in_index] = input[samples_remaining - 1];
-		
+		in_index = block_start_position;
+		CopySubBlock(XXX);
+		// append the sub-block to the output buffer for the right channel
 		input = kite->Input_Right;
 		output = kite->Output_Right;
+		in_index = block_start_position;
+		out_index = out_start;
+		CopySubBlock(XXX);
 		
-		output[out_index] = input[in_index];
-		input[in_index] = input[samples_remaining - 1];
-		
-		++samples_processed;
-		++out_index;
+		// ++out_index ?? (does CopySubBlock change out_index ??
 	}
 }
 
