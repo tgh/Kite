@@ -1,0 +1,67 @@
+early return error handling (samples, sample rate, instance is NULL)
+
+set constant minimum sub-block size to 0.25 * sample rate (0.25 seconds)
+set constant maximum sub-block size to 2 * sample rate (2 seconds)
+set constant integer ON = 1
+set constant integer OFF = 0
+
+setup a buffer input pointer = NULL
+setup a buffer output pointer = NULL
+setup an input index = 0
+setup an output index = 0
+setup a sub-block start position = 0
+setup a sub-block end position = 0
+setup a random number upper bound = 0
+setup a random number lower bound = 0
+setup a boolean reverse = false
+initialize a samples remaining count = total samples
+
+while output index < total samples
+
+	random number lower bound = minimum sub-block size
+	random number upper bound = samples remaining - minimum sub-block size - 1
+
+	if samples remaining is less than or equal to minumum sub-block size or random number upper bound is less than or equal to random number lower bound
+		set sub-block start position to 0
+		set sub-block end position to samples remaining - 1
+	endif
+
+	else if random number upper bound < random lower bound + minimum sub-block size
+		get a random number for the sub-block start position using random number lower bound and random number upper bound
+		set sub-block end position to samples remaining - 1	
+	endif
+
+	else
+		get a random number for the sub-block start position using random number lower bound and random number upper bound
+		set the random number lower bound to sub-block start position + minimum sub-block size
+		set the random number upper bound to samples remaining - 1
+		get a random number for the sub-block end position using random number lower bound and random number upper bound
+	endif
+		
+	get a value for reverse (reverse = DecideReverse())
+
+	if reverse is ON
+		apply reverse effect to the sub-block (ApplyReverse(kite, start position, end position)) // make sure ApplyReverse reverses both left and right channels of kite)
+	endif
+
+	// append the sub-block to the output buffer for left channel
+	unsigned long output_start = output index
+	input index = start position
+	while (input index < end position)				<----------------------- these loops are the same--make them a seperate function CopySubBlock()
+		output[output index] = input[input index]													|
+		++output index																						|
+		++input index																						|
+	end loop																									|
+																												|
+	// append the sub-block to the output buffer for the right channel					|
+	input = kite->input_right																			|
+	output = kite->output_right																		|
+	input index = start position																		|
+	output index = output start																		|
+	while (input index < end position)		<-----------------------------------------'
+		output[output index] = input[input index]
+		++output index
+		++input index
+	end loop
+
+end loop

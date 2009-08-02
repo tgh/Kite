@@ -25,21 +25,21 @@ UNINSTALL = /usr/lib/ladspa/sb_*	# your LADSPA_PATH environment
 											# variable (type 'echo $LADSPA_PATH'
 											# at your shell prompt)
 
-PLUGINS	=	sb_scrambler.so
+PLUGINS	=	sb_kite.so
 
 # ----------------------------------------------------
 
 all: $(PLUGINS)
 
-sb_scrambler.o: sb_scrambler.c xorgens.c ladspa.h xorgens.h
-	$(CC) $(CFLAGS) -c sb_scrambler.c
+sb_kite.o: sb_kite.c xorgens.c ladspa.h xorgens.h
+	$(CC) $(CFLAGS) -c sb_kite.c
 	$(CC) $(CFLAGS) -c xorgens.c
 
-sb_scrambler.so: sb_scrambler.o xorgens.o
-	$(CC) $(LDFLAGS) -o sb_scrambler.so sb_scrambler.o xorgens.o
+sb_kite.so: sb_kite.o xorgens.o
+	$(CC) $(LDFLAGS) -o sb_kite.so sb_kite.o xorgens.o
 
-install: sb_scrambler.so
-	cp sb_scrambler.so $(LADSPA_PATH)
+install: sb_kite.so
+	cp sb_kite.so $(LADSPA_PATH)
 
 uninstall:
 	rm -f $(UNINSTALL)

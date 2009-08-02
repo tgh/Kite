@@ -1,9 +1,14 @@
-SCRAMBLER (part of the StudioBlood LADSPA plugin package, hence the sb_ prefix)
+KITE (part of the StudioBlood LADSPA plugin package, hence the sb_ prefix)
 -------
-July 29, 2009. Tyler Hayes. Portland, OR.
+August 2, 2009. Tyler Hayes. Portland, OR.
 
-Scrambler is an audio effect plugin using LADPSA (Linux Audio Developers Simple
-Plugin API).  It basically takes each block of samples and reorders them randomly.
+Kite is an audio effect plugin using LADPSA (Linux Audio Developers Simple
+Plugin API).  This plugin takes a sound sample, randomly cuts it up into pieces
+of various lengths, ramdonly reverses some of the pieces, and glues them all back
+together randomly. This is based on the circus sound effects at the end of
+"Being for the Benefit of Mr. Kite!" by The Beatles, which was created by George
+Martin and Geoff Emerick by literally cutting up sound effects tape, tossing them
+up in the air, and splicing the pieces back together randomly.
 
 It is written in C because the API is in C, and licensed under the GPL v3,
 because it's an easy choice when one doesn't want to take the time to
