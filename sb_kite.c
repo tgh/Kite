@@ -56,6 +56,10 @@
 // gets a random unsigned long integer
 unsigned long GetRandomNaturalNumber(unsigned long lower_bound, unsigned long upper_bound);
 
+// reverses the given block of samples (block meaning an array of LADSPA_Data,
+// which are floats)
+void ApplyReverse(LADSPA_Data * buffer, unsigned long start, unsigned long end);
+
 
 //--------------------------------
 //-- STRUCT FOR PORT CONNECTION --
@@ -190,7 +194,7 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
 		}
 		else if (samples_remaining <= MAX_BLOCK_END)
 		{
-			rand_num_upper_bound = samples_remaining - MIN_BLOCK_START - 1;
+			rand_num_upper_bound = samples_remaining - MIN_BLOCK_START;
 			block_start_position = GetRandomNaturalNumber(rand_num_lower_bound,
 																		 rand_num_upper_bound);
 			block_end_position = samples_remaining - 1;
@@ -201,7 +205,7 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
 																		 rand_num_upper_bound);
 			rand_num_lower_bound = block_start_position + MIN_BLOCK_START;
 			if (samples_remaining <= block_start_position + MAX_BLOCK_END - MIN_BLOCK_START)
-				rand_num_upper_bound = samples_remaining - 1;
+				rand_num_upper_bound = samples_remaining;
 			else
 				rand_num_upper_bound = block_start_position + MAX_BLOCK_END - MIN_BLOCK_START;
 			block_end_position = GetRandomNaturalNumber(rand_num_lower_bound,
@@ -211,7 +215,10 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
 		reverse = (short) GetRandomNaturalNumber(0, 2);
 		
 		if (reverse == ON)
-			ApplyReverse(kite, block_start_position, block_end_position);
+		{
+			ApplyReverse(kite->Input_Left, block_start_position, block_end_position);
+			ApplyReverse(kite->Input_Right, block_start_position, block_end_position);
+		}
 		
 		// append the sub-block to the output buffer for the left channel
 		unsigned long out_start = out_index;
@@ -492,6 +499,24 @@ unsigned long GetRandomNaturalNumber(unsigned long lower_bound, unsigned long up
 	rand_num += lower_bound;
 	
 	return rand_num;
+}
+
+//-----------------------------------------------------------------------------
+
+/*
+ *
+ */
+void ApplyReverse(LADSPA_Data * buffer, unsigned long start, unsigned long end)
+{
+	LADSPA_Data holder = 0.0f;
+	while (start <= end)
+	{
+		holder = buffer[start];
+		buffer[start] = buffer[end];
+		buffer[end] = holder;
+		++start;
+		--end;
+	}
 }
 
 // ------------------------------- EOF ----------------------------------------
