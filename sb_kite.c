@@ -205,7 +205,7 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
 																	  rand_num_upper_bound);
 		}
 		
-		reverse = DecideReverse();
+		reverse = (short) GetRandomNaturalNumber(2);
 		
 		if (reverse == ON)
 			ApplyReverse(kite, block_start_position, block_end_position);
@@ -215,15 +215,23 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
 		input = kite->Input_Left;
 		output = kite->Output_Left;
 		in_index = block_start_position;
-		CopySubBlock(XXX);
+		while (in_index < block_end_position)
+		{
+			output[out_index] = input[in_index];
+			++out_index;
+			++in_index;
+		}
 		// append the sub-block to the output buffer for the right channel
 		input = kite->Input_Right;
 		output = kite->Output_Right;
 		in_index = block_start_position;
 		out_index = out_start;
-		CopySubBlock(XXX);
-		
-		// ++out_index ?? (does CopySubBlock change out_index ??
+		while (in_index < block_end_position)
+		{
+			output[out_index] = input[in_index];
+			++out_index;
+			++in_index;
+		}
 	}
 }
 
@@ -472,7 +480,7 @@ unsigned long GetRandomNaturalNumber(unsigned long upper_bound)
 	 * xor4096i(), which, unlike the C standard generator, is seeded
 	 * and returns a number with the same call.
 	 */
-	unsigned long rand_num;
+	unsigned long rand_num = 0;
 	// seed the generator and retrieve the random number
 	rand_num = xor4096i((unsigned long)(current_time.tv_usec * current_time.tv_sec));
 	// force the random number to within the boundaries
