@@ -1,7 +1,7 @@
 early return error handling (samples, sample rate, instance is NULL)
 
-set constant minimum sub-block size to 0.25 * sample rate (0.25 seconds)
-set constant maximum sub-block size to 2 * sample rate (2 seconds)
+set constant minimum sub-block start to 0.25 * sample rate (0.25 seconds)
+set constant maximum sub-block end to minimum sub-block start + 2 * sample rate (2 seconds)
 set constant integer ON = 1
 set constant integer OFF = 0
 
@@ -18,23 +18,27 @@ initialize a samples remaining count = total samples
 
 while output index < total samples
 
-	random number lower bound = minimum sub-block size
-	random number upper bound = samples remaining - minimum sub-block size - 1
+	random number lower bound = minimum sub-block start
+	random number upper bound = maximum sub-block end
 
-	if samples remaining is less than or equal to minumum sub-block size or random number upper bound is less than or equal to random number lower bound
+	if samples remaining is less than or equal to 2 * minumum sub-block start, then
 		set sub-block start position to 0
 		set sub-block end position to samples remaining - 1
 	endif
 
-	else if random number upper bound < random lower bound + minimum sub-block size
+	else if sample remaining is less than or equal to maximum sub-block end, then
+		set the random number upper bound to samples remaining - minimum sub-block start - 1
 		get a random number for the sub-block start position using random number lower bound and random number upper bound
 		set sub-block end position to samples remaining - 1	
 	endif
 
-	else
+	otherwise,
 		get a random number for the sub-block start position using random number lower bound and random number upper bound
 		set the random number lower bound to sub-block start position + minimum sub-block size
-		set the random number upper bound to samples remaining - 1
+		if samples remaining is less than or equal to sub-block start position + maximum sub-block end minus minimum sub-block start, then
+			set the random number upper bound to samples remaining - 1
+		otherwise,
+			set the random number upper bound to sub-block start position + maximum sub-block end minus sub-block start
 		get a random number for the sub-block end position using random number lower bound and random number upper bound
 	endif
 		
