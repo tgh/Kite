@@ -54,7 +54,7 @@
 //-------------------------
 
 // gets a random unsigned long integer
-unsigned long GetRandomNaturalNumber(unsigned long upper_bound);
+unsigned long GetRandomNaturalNumber(unsigned long lower_bound, unsigned long upper_bound);
 
 
 //--------------------------------
@@ -157,10 +157,10 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
 		return;
 	}
 	
-	// set the minimum size of the random sub-blocks to 0.25 seconds
-	const unsigned long MIN_BLOCK_SIZE = (unsigned long) (0.25 * kite->sample_rate);
-	// set the maximum size of the random sub-block to 2 seconds
-	const unsigned long MAX_BLOCK_SIZE = 2 * kite->sample_rate;
+	// set the minimum index of the random sub-blocks to 0.25 seconds
+	const unsigned long MIN_BLOCK_START = (unsigned long) (0.25 * kite->sample_rate);
+	// set the maximum index of the random sub-block to 2.25 seconds
+	const unsigned long MAX_BLOCK_END = MIN_BLOCK_START + (2 * kite->sample_rate);
 	// buffer pointers
 	LADSPA_Data * input = NULL;
 	LADSPA_Data * output = NULL;
@@ -180,17 +180,17 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
 	
 	while (out_index < total_samples)
 	{
-		rand_num_lower_bound = MIN_BLOCK_SIZE;
-		rand_num_upper_bound = samples_remaining - MIN_BLOCK_SIZE - 1;
+		rand_num_lower_bound = MIN_BLOCK_START;
+		rand_num_upper_bound = MAX_BLOCK_END;
 		
-		if (samples_remaining <= MIN_BLOCK_SIZE
-			 || rand_num_upper_bound <= rand_num_lower_bound)
+		if (samples_remaining <= MIN_BLOCK_START * 2)
 		{
 			block_start_position = 0;
 			block_end_position = samples_remaining - 1;
 		}
-		else if (rand_num_upper_bound < rand_num_lower_bound + MIN_BLOCK_SIZE)
+		else if (samples_remaining <= MAX_BLOCK_END)
 		{
+			rand_num_upper_bound = samples_remaining - MIN_BLOCK_START - 1;
 			block_start_position = GetRandomNaturalNumber(rand_num_lower_bound,
 																		 rand_num_upper_bound);
 			block_end_position = samples_remaining - 1;
@@ -199,13 +199,16 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
 		{
 			block_start_position = GetRandomNaturalNumber(rand_num_lower_bound,
 																		 rand_num_upper_bound);
-			rand_num_lower_bound = block_start_position + MIN_BLOCK_SIZE;
-			rand_num_upper_bound = samples_remaining - 1;
+			rand_num_lower_bound = block_start_position + MIN_BLOCK_START;
+			if (samples_remaining <= block_start_position + MAX_BLOCK_END - MIN_BLOCK_START)
+				rand_num_upper_bound = samples_remaining - 1;
+			else
+				rand_num_upper_bound = block_start_position + MAX_BLOCK_END - MIN_BLOCK_START;
 			block_end_position = GetRandomNaturalNumber(rand_num_lower_bound,
 																	  rand_num_upper_bound);
 		}
 		
-		reverse = (short) GetRandomNaturalNumber(2);
+		reverse = (short) GetRandomNaturalNumber(0, 2);
 		
 		if (reverse == ON)
 			ApplyReverse(kite, block_start_position, block_end_position);
@@ -460,7 +463,7 @@ void _fini()
  * comments in the function) to get a random unsigned long integer.  It is
  * seeded with the current time's seconds and nanoseconds.
  */
-unsigned long GetRandomNaturalNumber(unsigned long upper_bound)
+unsigned long GetRandomNaturalNumber(unsigned long lower_bound, unsigned long upper_bound)
 {
 	// get the current time to seed the generator
 	struct timeval current_time;
@@ -481,10 +484,12 @@ unsigned long GetRandomNaturalNumber(unsigned long upper_bound)
 	 * and returns a number with the same call.
 	 */
 	unsigned long rand_num = 0;
-	// seed the generator and retrieve the random number
+	// seed the generator and retrieve a random number
 	rand_num = xor4096i((unsigned long)(current_time.tv_usec * current_time.tv_sec));
-	// force the random number to within the boundaries
+	// force the random number to less than the upper bound
 	rand_num = rand_num % upper_bound;
+	// force the random number to at least the lower bound
+	rand_num += lower_bound;
 	
 	return rand_num;
 }
