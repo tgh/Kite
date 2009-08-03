@@ -60,6 +60,11 @@ unsigned long GetRandomNaturalNumber(unsigned long lower_bound, unsigned long up
 // which are floats)
 void ApplyReverse(LADSPA_Data * buffer, unsigned long start, unsigned long end);
 
+// copies a subsection of an array of LADSPA_Data (floats) into a subsection of another array
+void CopySubBlock(LADSPA_Data * destination, unsigned long dest_start,
+						LADSPA_Data * source, unsigned long source_start,
+						unsigned long source_end);
+
 
 //--------------------------------
 //-- STRUCT FOR PORT CONNECTION --
@@ -169,7 +174,6 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
 	LADSPA_Data * input = NULL;
 	LADSPA_Data * output = NULL;
 	// buffer indexes
-	unsigned long in_index = 0;
 	unsigned long out_index = 0;
 	// index points for the sub-blocks of random sizes
 	unsigned long block_start_position = 0;
@@ -184,7 +188,12 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
 	
 	while (out_index < total_samples)
 	{
+		// set the lower bound for the random starting position of the sub-block
+		// to 0.25 seconds worth of samples from the current point of the output
+		// buffer
 		rand_num_lower_bound = MIN_BLOCK_START;
+		// set the upper bound for the random end position of the sub-block to
+		// 2.25 seconds worth of samples from the current point of the output buffer
 		rand_num_upper_bound = MAX_BLOCK_END;
 		
 		if (samples_remaining <= MIN_BLOCK_START * 2)
@@ -204,10 +213,10 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
 			block_start_position = GetRandomNaturalNumber(rand_num_lower_bound,
 																		 rand_num_upper_bound);
 			rand_num_lower_bound = block_start_position + MIN_BLOCK_START;
-			if (samples_remaining <= block_start_position + MAX_BLOCK_END - MIN_BLOCK_START)
+			if (samples_remaining < block_start_position + MAX_BLOCK_END - MIN_BLOCK_START)
 				rand_num_upper_bound = samples_remaining;
 			else
-				rand_num_upper_bound = block_start_position + MAX_BLOCK_END - MIN_BLOCK_START;
+				rand_num_upper_bound = block_start_position + MAX_BLOCK_END - MIN_BLOCK_START - 1;
 			block_end_position = GetRandomNaturalNumber(rand_num_lower_bound,
 																	  rand_num_upper_bound);
 		}
@@ -221,27 +230,36 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
 		}
 		
 		// append the sub-block to the output buffer for the left channel
-		unsigned long out_start = out_index;
-		input = kite->Input_Left;
-		output = kite->Output_Left;
-		in_index = block_start_position;
-		while (in_index < block_end_position)
-		{
-			output[out_index] = input[in_index];
-			++out_index;
-			++in_index;
-		}
+		CopySubBlock(kite->Output_Left, out_index,
+						 kite->Input_Left, block_start_position, block_end_position);
 		// append the sub-block to the output buffer for the right channel
-		input = kite->Input_Right;
-		output = kite->Output_Right;
-		in_index = block_start_position;
-		out_index = out_start;
-		while (in_index < block_end_position)
-		{
-			output[out_index] = input[in_index];
-			++out_index;
-			++in_index;
-		}
+		CopySubBlock(kite->Output_Right, out_index,
+						 kite->Input_Right, block_start_position, block_end_position);
+		
+		/*
+		 * copy the block at the end of the current valid input buffer (the portion
+		 * we are still working in--0 to samples remaining) (that is equal in length
+		 * to the block just copied into the output buffer) to the section of the
+		 * input buffer that was just copied.  In other words, write over the section
+		 * of the input buffer that was just copied with the same number of samples
+		 * that end the portion of the input buffer that is yet to be processed.
+		 */
+		// get the number of samples copied
+		unsigned long samples_copied = block_end_position - block_start_position + 1;
+		// set the start index to the end section of input buffer that is going to
+		// be copied over the used section
+		unsigned long source_start = samples_remaining - samples_copied;
+		// write over used section of left channel input
+		CopySubBlock(kite->Input_Left, block_start_position,
+						 kite->Input_Left, source_start, samples_remaining - 1);
+		// write over used section of right channel input
+		CopySubBlock(kite->Input_Right, block_start_position,
+						 kite->Input_Right, source_start, samples_remaining - 1);
+		
+		// update the output index
+		out_index += samples_copied;
+		// update the number of samples remaining to be processed
+		samples_remaining -= samples_copied;
 	}
 }
 
@@ -493,8 +511,8 @@ unsigned long GetRandomNaturalNumber(unsigned long lower_bound, unsigned long up
 	unsigned long rand_num = 0;
 	// seed the generator and retrieve a random number
 	rand_num = xor4096i((unsigned long)(current_time.tv_usec * current_time.tv_sec));
-	// force the random number to less than the upper bound
-	rand_num = rand_num % upper_bound;
+	// reduce the random number to between 0 and the sample size
+	rand_num = rand_num % (upper_bound - lower_bound + 1);
 	// force the random number to at least the lower bound
 	rand_num += lower_bound;
 	
@@ -504,11 +522,14 @@ unsigned long GetRandomNaturalNumber(unsigned long lower_bound, unsigned long up
 //-----------------------------------------------------------------------------
 
 /*
- *
+ * This procedure takes a buffer (an array of floats) and resorts a subsection
+ * of the array in reverse order based on the start and end indexes passed in.
  */
 void ApplyReverse(LADSPA_Data * buffer, unsigned long start, unsigned long end)
 {
+	// a temporary holder of a value so the values in the indexes can be swapped
 	LADSPA_Data holder = 0.0f;
+	//swap the values in the indexes until the indexes meet in the middle
 	while (start <= end)
 	{
 		holder = buffer[start];
@@ -516,6 +537,34 @@ void ApplyReverse(LADSPA_Data * buffer, unsigned long start, unsigned long end)
 		buffer[end] = holder;
 		++start;
 		--end;
+	}
+}
+
+//-----------------------------------------------------------------------------
+
+/*
+ * This procedure copies a section of an array of LADSPA_Data (floats) into a
+ * section of another array.
+ *
+ * NOTE: the source endpoint IS copied.
+ *
+ * ASSUMPTIONS: the destination array does not end before the source section
+ * ends.
+ */
+void CopySubBlock(LADSPA_Data * destination, unsigned long dest_start,
+						LADSPA_Data * source, unsigned long source_start,
+						unsigned long source_end)
+{
+	if (dest_start == source_start)
+		return;
+	
+	LADSPA_Data dest_index = dest_start;
+	LADSPA_Data source_index = 0;
+	
+	for (source_index = source_start; source_index <= dest_end; ++source_index)
+	{
+		destination[dest_index] = source[source_index];
+		++dest_index;
 	}
 }
 
