@@ -190,6 +190,7 @@ int main(int argc, char * argv[])
     fprintf(fd, "\nTest : %f sample rate, %ld samples\n", SAMPLE_RATE,
             BUFFER_SIZE);
     fprintf(fd, "\tResult:");
+    fclose(fd);
 
     // run the unit to be tested
     run_Kite(kite, BUFFER_SIZE);
