@@ -261,12 +261,14 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
 
 //----------------FILE INITIATION FOR TEST RESULTS-----------------------------
     FILE * write_file = NULL;
-    write_file = fopen(filename, "a");
+    write_file = fopen(filename, "w");
     if (!write_file)
     {
       printf("\n**Error: fail to create file %s\n", filename);
       return;
     }
+    fprintf(write_file, "Sample Rate: %ld", kite->sample_rate);
+    fprintf(write_file, "\nSample Count: %ld\n", total_samples);
 //-----------------------------------------------------------------------------
     
     while (out_index < total_samples)
@@ -341,7 +343,7 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
         // (I wish C had boolean types)
         short reverse = OFF;
         // get a random state for reverse (on or off, which is 0 or 1)
-        reverse = (short) GetRandomNaturalNumber(0, 2);
+        reverse = (short) GetRandomNaturalNumber(0, 1);
 
         // reverse the sub-block if the reverse switch is on
         if (reverse == ON)
@@ -355,17 +357,20 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
         }
         
 //-----------------------------------------------------------------------------
-        fprintf(write_file, "Sample Rate: %ld", kite->sample_rate);
-        fprintf(write_file, "\nSample Count: %ld\n", total_samples);
         fprintf(write_file, "\nSub-block sample size: %ld", block_end_position -
-                block_start_position);
-        fprintf(write_file, "\nReverse: &d\n\n", reverse);
-        fprintf(write_file, "\nSample values:\n\n");
+                block_start_position + 1);
+        fprintf(write_file, "\nReverse: %d\n\n", reverse);
+        fprintf(write_file, "\nSample values for LEFT CHANNEL:\n\n");
 //-----------------------------------------------------------------------------
         
         // append the sub-block to the output buffer for the left channel
         CopySubBlock(kite->Output_Left, out_index, kite->Input_Left,
                      block_start_position, block_end_position, write_file);
+
+//-----------------------------------------------------------------------------
+        fprintf(write_file, "\n\nSample values for RIGHT CHANNEL:\n\n");
+//-----------------------------------------------------------------------------
+
         // append the sub-block to the output buffer for the right channel
         CopySubBlock(kite->Output_Right, out_index, kite->Input_Right,
                      block_start_position, block_end_position, write_file);
@@ -387,13 +392,18 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
         unsigned long source_start = samples_remaining - samples_copied;
         
 //-----------------------------------------------------------------------------
-        fprintf(write_file, "\n\nOverwriting values:\n\n");
+        fprintf(write_file, "\n\nOverwriting values for LEFT CHANNEL:\n\n");
 //-----------------------------------------------------------------------------
         
         // write over used section of left channel input
         CopySubBlock(kite->Input_Left, block_start_position,
                      kite->Input_Left, source_start, samples_remaining - 1,
                      write_file);
+
+//-----------------------------------------------------------------------------
+        fprintf(write_file, "\n\nOverwriting values for RIGHT CHANNEL:\n\n");
+//-----------------------------------------------------------------------------
+
         // write over used section of right channel input
         CopySubBlock(kite->Input_Right, block_start_position,
                      kite->Input_Right, source_start, samples_remaining - 1,
