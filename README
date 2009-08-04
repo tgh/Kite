@@ -1,6 +1,8 @@
 KITE (part of the StudioBlood LADSPA plugin package, hence the sb_ prefix)
+
 -------
-August 2, 2009. Tyler Hayes. Portland, OR.
+
+August 4, 2009. Tyler Hayes. Portland, OR.
 
 Kite is an audio effect plugin using LADPSA (Linux Audio Developers Simple
 Plugin API).  This plugin takes a sound sample, randomly cuts it up into pieces
@@ -9,6 +11,20 @@ together randomly. This is based on the circus sound effects at the end of
 "Being for the Benefit of Mr. Kite!" by The Beatles, which was created by George
 Martin and Geoff Emerick by literally cutting up sound effects tape, tossing them
 up in the air, and splicing the pieces back together randomly.
+
+----------
+
+KNOWN BUG:
+
+The plugin is supposed to vary the lengths of random sub-blocks from
+0.25 seconds to 2 seconds.  However, I didn't see deep enough into my algorithm
+to see that it is possible to get sub-blocks of lengths smaller than 0.25
+seconds--even a sub-block of 1 sample!  To fix this would require a overhaul
+of the whole algorithm and reimplementation of the run_kite() procedure.
+
+The plugin works fine other than that and does what it's supposed to do.
+
+----------
 
 It is written in C because the API is in C, and licensed under the GPL v3,
 because it's an easy choice when one doesn't want to take the time to
@@ -27,8 +43,9 @@ the comments will be beneficial to those who were like me in learning the API,
 and not too annoying for the pro's out there.
 
 --------------
+
 HOW TO INSTALL
---------------
+
 To install, make sure the LADSPA_PATH variable in the Makefile is correct to your
 environment, and just run (as root) 'make install'.  You can also run 'make uninstall'
 (again, as root) to get rid of the plugin.
