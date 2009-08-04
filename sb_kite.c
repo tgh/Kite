@@ -187,9 +187,6 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
     // random number upper and lower bounds
     unsigned long rand_num_lower_bound = 0;
     unsigned long rand_num_upper_bound = 0;
-    // flag for whether the sub-block should be reversed
-    // (I wich C had boolean types)
-    short reverse = OFF;
     // the number of samples left to process (chop up into sub-blocks)
     unsigned long samples_remaining = total_samples;
 
@@ -204,39 +201,76 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
         // buffer
         rand_num_upper_bound = MAX_BLOCK_END;
 
+        // just set the start and end positions of the sub-block to process to
+        // the start and end of the remaining buffer since it is less than 2
+        // times the minimum size to process.
+        // this takes care of the special case where the audio passed in from
+        // the host is smaller than a half-second (2 times the minimum length).
+        // NOTE: It is 2 times the minimum because otherwise if a sub-block was
+        // processed out of it, the remaining section would be less than the
+        // minimum length.
         if (samples_remaining <= MIN_BLOCK_START * 2)
         {
             block_start_position = 0;
             block_end_position = samples_remaining - 1;
         }
+        
+        // set the end position of the sub-block to process to the end of the
+        // whole block if the whole block ends before the maximum cutoff point
         else if (samples_remaining <= MAX_BLOCK_END)
         {
+            // set the upper bound for the random number to be used as the
+            // start position of the sub-block to minimum length (.25s) from
+            // the end of the remaining buffer
             rand_num_upper_bound = samples_remaining - MIN_BLOCK_START;
+            // get a random start position for the sub-block
             block_start_position = GetRandomNaturalNumber(rand_num_lower_bound,
                                                           rand_num_upper_bound);
             block_end_position = samples_remaining - 1;
         }
+        
+        // get random start and end positions for the sub-block to process
         else
         {
+            // get a random number for the start position
             block_start_position = GetRandomNaturalNumber(rand_num_lower_bound,
                                                           rand_num_upper_bound);
+            // reset the lower bound for the random end position
             rand_num_lower_bound = block_start_position + MIN_BLOCK_START;
+            /*
+             * reset the upper bound for the random end position depending on
+             * where the end of the remaining buffer lies.
+             */
+            // here it is set to the end of the remaining buffer if the end of
+            // the remaining buffer comes before the maximum sub-block size
+            // (2 seconds) after the recently acquired start position.
             if (samples_remaining < (block_start_position + MAX_BLOCK_END -
                                      MIN_BLOCK_START))
                 rand_num_upper_bound = samples_remaining;
+            // here the upper bound is set to the maximum sub-block size after
+            // the start position, because the end of the remaining buffer is
+            // beyond that point.
             else
                 rand_num_upper_bound = block_start_position + MAX_BLOCK_END -
                                        MIN_BLOCK_START - 1;
+            // get a random number for the end position
             block_end_position = GetRandomNaturalNumber(rand_num_lower_bound,
                                                         rand_num_upper_bound);
         }
 
+        // switch (or flag) for whether the sub-block should be reversed
+        // (I wish C had boolean types)
+        short reverse = OFF;
+        // get a random state for reverse (on or off, which is 0 or 1)
         reverse = (short) GetRandomNaturalNumber(0, 2);
-    
+
+        // reverse the sub-block if the reverse switch is on
         if (reverse == ON)
         {
+            // reverse the sub-block left channel
             ApplyReverse(kite->Input_Left, block_start_position,
                          block_end_position);
+            // reverse the sub-block right channel
             ApplyReverse(kite->Input_Right, block_start_position,
                          block_end_position);
 		}
