@@ -2,18 +2,12 @@ early return error handling (samples, sample rate, instance is NULL)
 
 set constant minimum sub-block start to 0.25 * sample rate (0.25 seconds)
 set constant maximum sub-block end to minimum sub-block start + 2 * sample rate (2 seconds)
-set constant integer ON = 1
-set constant integer OFF = 0
 
-setup a buffer input pointer = NULL
-setup a buffer output pointer = NULL
-setup an input index = 0
 setup an output index = 0
 setup a sub-block start position = 0
 setup a sub-block end position = 0
 setup a random number upper bound = 0
 setup a random number lower bound = 0
-setup a boolean reverse = false
 initialize a samples remaining count = total samples
 
 while output index < total samples
@@ -27,47 +21,40 @@ while output index < total samples
 	endif
 
 	else if sample remaining is less than or equal to maximum sub-block end, then
-		set the random number upper bound to samples remaining - minimum sub-block start - 1
+		set the random number upper bound to samples remaining - minimum sub-block start
 		get a random number for the sub-block start position using random number lower bound and random number upper bound
 		set sub-block end position to samples remaining - 1	
 	endif
 
 	otherwise,
 		get a random number for the sub-block start position using random number lower bound and random number upper bound
-		set the random number lower bound to sub-block start position + minimum sub-block size
+		set the random number lower bound to sub-block start position + minimum sub-block start
 		if samples remaining is less than or equal to sub-block start position + maximum sub-block end minus minimum sub-block start, then
 			set the random number upper bound to samples remaining - 1
 		otherwise,
-			set the random number upper bound to sub-block start position + maximum sub-block end minus sub-block start
+			set the random number upper bound to sub-block start position + maximum sub-block end minus sub-block start - 1
 		get a random number for the sub-block end position using random number lower bound and random number upper bound
 	endif
 		
-	get a value for reverse (reverse = DecideReverse())
+	setup a switch (flag) reverse for reversing the sub-block or not
+	get an on or off value randomly for reverse 
 
 	if reverse is ON
-		apply reverse effect to the sub-block (ApplyReverse(kite, start position, end position)) // make sure ApplyReverse reverses both left and right channels of kite)
+		apply reverse effect to the sub-block left channel
+		apply reverse effect to the sub-block right channel
 	endif
 
-	// append the sub-block to the output buffer for left channel
-	unsigned long output_start = output index
-	input index = start position
-	input = kite->input_left
-	output = kite->output_left
-	while (input index < end position)				<----------------------- these loops are the same--make them a seperate function CopySubBlock()
-		output[output index] = input[input index]													|
-		++output index																						|
-		++input index																						|
-	end loop																									|
-																												|
-	// append the sub-block to the output buffer for the right channel					|
-	input = kite->input_right																			|
-	output = kite->output_right																		|
-	input index = start position																		|
-	output index = output start																		|
-	while (input index < end position)		<-----------------------------------------'
-		output[output index] = input[input index]
-		++output index
-		++input index
-	end loop
+	append the sub-block to the output buffer for left channel
+	
+	append the sub-block to the output buffer for the right channel
+
+	calculate the number of samples copied
+	stup a start position index into the input buffer to copy over the sub-block just copied
+
+	copy samples_copied number of samples from the end of samples remaining in the input to the section of input just copied
+
+	increase the output index samples_copied
+
+	samples remaining -= samples_copied
 
 end loop
