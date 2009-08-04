@@ -186,7 +186,7 @@ int main(int argc, char * argv[])
 
     // add this test to the test log file
     FILE * fd = NULL;
-    fopen("test_log.txt", "a");
+    fd = fopen("test_log.txt", "a");
     fprintf(fd, "\nTest : %f sample rate, %ld samples\n", SAMPLE_RATE,
             BUFFER_SIZE);
     fprintf(fd, "\tResult:");
