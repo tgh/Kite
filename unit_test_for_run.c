@@ -253,9 +253,6 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
     // random number upper and lower bounds
     unsigned long rand_num_lower_bound = 0;
     unsigned long rand_num_upper_bound = 0;
-    // flag for whether the sub-block should be reversed
-    // (I wich C had boolean types)
-    short reverse = OFF;
     // the number of samples left to process (chop up into sub-blocks)
     unsigned long samples_remaining = total_samples;
 
