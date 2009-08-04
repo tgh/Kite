@@ -169,6 +169,12 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
         printf("\nPlugin not executed.\n");
         return;
     }
+    if (kite->sample_rate == 0)
+    {
+        printf("\nA sample rate of 0 was sent to plugin.");
+        printf("\nPlugin not executed.\n");
+        return;
+    }
 
     // set the minimum index of the random sub-blocks to 0.25 seconds
     const unsigned long MIN_BLOCK_START = (unsigned long)
@@ -235,9 +241,9 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
             // reset the lower bound for the random end position
             rand_num_lower_bound = block_start_position + MIN_BLOCK_START;
             /*
-            * reset the upper bound for the random end position depending on
-            * where the end of the remaining buffer lies.
-            */
+             * reset the upper bound for the random end position depending on
+             * where the end of the remaining buffer lies.
+             */
             // here it is set to the end of the remaining buffer if the end of
             // the remaining buffer comes before the maximum sub-block size
             // (2 seconds) after the recently acquired start position.
