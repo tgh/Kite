@@ -383,13 +383,27 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
          * words, write over the section of the input buffer that was just
          * copied with the same number of samples that end the portion of the
          * input buffer that is yet to be processed.
+         * Sometimes the number of samples left in the remaining input buffer
+         * is less than the number just copied.  In that case, the section
+         * copied over is just the remaining section of the input buffer
+         * immediately following the sub-block end position.
          */
         // get the number of samples copied
         unsigned long samples_copied = block_end_position - 
                                        block_start_position + 1;
         // set the start index to the end section of input buffer that is
         // going to be copied over the used section
-        unsigned long source_start = samples_remaining - samples_copied;
+        unsigned long source_start = 0;
+        // set the start index to the number of samples copied away from the
+        // end of the remaining input buffer if there are more than the number
+        // of samples copied left in the remaining input buffer
+        if (samples_remaining - samples_copied > block_end_position)
+            source_start = samples_remaining - samples_copied;
+        // set the start index to the next position after the sub-block end
+        // position if there are less than the number of samples copied left
+        // in the remaining input buffer
+        else
+            source_start = block_end_position + 1;
         
 //-----------------------------------------------------------------------------
         fprintf(write_file, "\n\nOverwriting values for LEFT CHANNEL:\n\n");
@@ -496,7 +510,7 @@ void CopySubBlock(LADSPA_Data * destination, unsigned long dest_start,
                   LADSPA_Data * source, unsigned long src_start,
                   unsigned long src_end, FILE * file)
 {
-    if (dest_start == src_start)
+    if (dest_start == src_start || src_start > src_end)
 //-----------------------------------------------------------------------------
     {
         fprintf(file, "No need to overwrite.\n\n");
