@@ -5,5 +5,4 @@
 # ignore object files
 *.o
 # ignore test results
-*.txt
 *.dat
