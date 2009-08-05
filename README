@@ -1,8 +1,7 @@
 KITE (part of the StudioBlood LADSPA plugin package, hence the sb_ prefix)
+COPYRIGHT (c)2009. Tyler Hayes. Portland, OR. August 4, 2009.
 
 -------
-
-August 4, 2009. Tyler Hayes. Portland, OR.
 
 Kite is an audio effect plugin using LADPSA (Linux Audio Developers Simple
 Plugin API).  This plugin takes a sound sample, randomly cuts it up into pieces
