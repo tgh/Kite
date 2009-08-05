@@ -6,11 +6,11 @@ August 4, 2009. Tyler Hayes. Portland, OR.
 
 Kite is an audio effect plugin using LADPSA (Linux Audio Developers Simple
 Plugin API).  This plugin takes a sound sample, randomly cuts it up into pieces
-of various lengths, ramdonly reverses some of the pieces, and glues them all back
-together randomly. This is based on the circus sound effects at the end of
+of various lengths, ramdonly reverses some of the pieces, and glues them all
+back together randomly. This is based on the circus sound effects at the end of
 "Being for the Benefit of Mr. Kite!" by The Beatles, which was created by George
-Martin and Geoff Emerick by literally cutting up sound effects tape, tossing them
-up in the air, and splicing the pieces back together randomly.
+Martin and Geoff Emerick by literally cutting up sound effects tape, tossing
+them up in the air, and splicing the pieces back together randomly.
 
 ----------
 
@@ -37,15 +37,15 @@ the Makefile in order to produce a working shared object file.
 Also thanks to Richard Brent for his uniform random number generator.
 (http://wwwmaths.anu.edu.au/~brent/random.html)
 
-I am still a student programmer at the time of this writing, so some of the comments
-in the source code are detailed and directed at the beginner as well.  Hopefully
-the comments will be beneficial to those who were like me in learning the API,
-and not too annoying for the pro's out there.
+I am still a student programmer at the time of this writing, so some of the
+comments in the source code are detailed and directed at the beginner as well.
+Hopefully the comments will be beneficial to those who were like me in learning
+the API, and not too annoying for the pro's out there.
 
 --------------
 
 HOW TO INSTALL
 
-To install, make sure the LADSPA_PATH variable in the Makefile is correct to your
-environment, and just run (as root) 'make install'.  You can also run 'make uninstall'
-(again, as root) to get rid of the plugin.
+To install, make sure the LADSPA_PATH variable in the Makefile is correct to
+your environment, and just run (as root) 'make install'.  You can also run 'make
+uninstall' (again, as root) to get rid of the plugin.
