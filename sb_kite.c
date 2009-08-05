@@ -5,6 +5,13 @@
  * Please see the file COPYING in the source
  * distribution of this software for license terms.
  *
+ * This plugin virtually takes a sound sample, randomly cuts it up into pieces
+ * of various lengths, randomly reverses some of the pieces, and glues them all
+ * back together randomly. This is based on the circus sound effects at the end
+ * of "Being for the Benefit of Mr. Kite!" by The Beatles, which was created by
+ * George Martin and Geoff Emerick by literally cutting up sound effects tape,
+ * tossing them up in the air, and splicing the pieces back together randomly.
+ *
  * Thanks to:
  * - Bart Massey of Portland State University (http://web.cecs.pdx.edu/~bart/)
  *   for suggesting LADSPA plugins as a project.
