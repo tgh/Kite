@@ -6,7 +6,7 @@ ALL RIGHTS RESERVED.
 
 Kite is an audio effect plugin using LADPSA (Linux Audio Developers Simple
 Plugin API).  This plugin takes a sound sample, randomly cuts it up into pieces
-of various lengths, ramdonly reverses some of the pieces, and glues them all
+of various lengths, randomly reverses some of the pieces, and glues them all
 back together randomly. This is based on the circus sound effects at the end of
 "Being for the Benefit of Mr. Kite!" by The Beatles, which was created by George
 Martin and Geoff Emerick by literally cutting up sound effects tape, tossing
