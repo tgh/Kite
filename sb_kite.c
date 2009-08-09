@@ -51,9 +51,6 @@
 #define UNIQUE_ID 4304
 // number of ports involved
 #define PORT_COUNT 4
-// named flags for on/off (used in run())
-#define ON 1
-#define OFF 0
 
 
 //-------------------------
@@ -268,14 +265,16 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
                     rand_num_upper_bound);
         }
         
-        // switch (or flag) for whether the sub-block should be reversed
-        // (I wish C had boolean types)
-        short reverse = OFF;
-        // get a random state for reverse (on or off, which is 0 or 1)
-        reverse = (short) GetRandomNaturalNumber(0, 1);
+        // switch (or flag) for whether the sub-block should be reversed.
+        short reverse = 0;
+        // get a random state for reverse.  It receives 3 possible states:
+        // 0, 1, or 2.  The block will only be reversed if 'reverse' is equal to
+        // 0.  The reason for this is so the chances of being reversed is less
+        // than not, as in 33% chance of reversal vs. 67% chance of not.
+        reverse = (short) GetRandomNaturalNumber(0, 2);
 
-        // reverse the sub-block if the reverse switch is on
-        if (reverse == ON)
+        // reverse the sub-block if the reverse switch is 'on' (equals 0)
+        if (reverse == 0)
         {
             // reverse the sub-block left channel
             ApplyReverse(kite->Input_Left, block_start_position,

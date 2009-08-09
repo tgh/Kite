@@ -2,7 +2,6 @@
 Test 1: 8000 sample rate, 4000 samples
 	Result: Passed.
 
-
 Test 2: 8000 sample rate, 4001 samples
 	Result: reverse switch received a value of 2
 	Error: random number function changed to include upper bound, but caller's
