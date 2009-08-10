@@ -77,7 +77,9 @@ void CopySubBlock(LADSPA_Data * destination, unsigned long dest_start,
 //-- STRUCT FOR PORT CONNECTION --
 //--------------------------------
 
-typedef struct {
+
+typedef struct
+{
     // the samples per second of the sound
     unsigned long sample_rate;
     // data locations for the input & output audio ports
@@ -92,6 +94,7 @@ typedef struct {
 //-- FUNCTIONS --
 //---------------
 
+
 /*
  * Creates a plugin instance by allocating space for a plugin handle.
  * This function returns a LADSPA_Handle (which is a void * -- a pointer to
@@ -103,7 +106,7 @@ LADSPA_Handle instantiate_Kite(const LADSPA_Descriptor * Descriptor,
     Kite * kite;
 
     // allocate space for a Kite struct instance
-    kite = (Kite *) malloc(sizeof(Kite));
+    kite = (Kite *) malloc(sizeof (Kite));
     // set the instance's sample rate
     if (kite)
         kite->sample_rate = sample_rate;
@@ -112,6 +115,7 @@ LADSPA_Handle instantiate_Kite(const LADSPA_Descriptor * Descriptor,
 }
 
 //-----------------------------------------------------------------------------
+
 
 /*
  * Make a connection between a specified port and it's corresponding data
@@ -129,22 +133,23 @@ void connect_port_to_Kite(LADSPA_Handle instance, unsigned long Port,
     // direct the appropriate data pointer to the appropriate data location
     switch (Port)
     {
-        case KITE_INPUT_LEFT :
+        case KITE_INPUT_LEFT:
             kite->Input_Left = data_location;
             break;
-        case KITE_INPUT_RIGHT :
+        case KITE_INPUT_RIGHT:
             kite->Input_Right = data_location;
             break;
-        case KITE_OUTPUT_LEFT :
+        case KITE_OUTPUT_LEFT:
             kite->Output_Left = data_location;
             break;
-        case KITE_OUTPUT_RIGHT :
+        case KITE_OUTPUT_RIGHT:
             kite->Output_Right = data_location;
-            break;	
+            break;
     }
 }
 
 //-----------------------------------------------------------------------------
+
 
 /*
  * Here is where the rubber hits the road.  The actual sound manipulation
@@ -182,10 +187,10 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
 
     // set the minimum index of the random sub-blocks to 0.25 seconds
     const unsigned long MIN_BLOCK_START = (unsigned long)
-                                          (0.25 * kite->sample_rate);
+            (0.25 * kite->sample_rate);
     // set the maximum index of the random sub-block to 2.25 seconds
     const unsigned long MAX_BLOCK_END = MIN_BLOCK_START +
-                                        (2 * kite->sample_rate);
+            (2 * kite->sample_rate);
     // buffer indexes
     unsigned long out_index = 0;
     // index points for the sub-blocks of random sizes
@@ -207,7 +212,7 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
         // 2.25 seconds worth of samples from the current point of the output
         // buffer
         rand_num_upper_bound = MAX_BLOCK_END;
-        
+
         // just set the start and end positions of the sub-block to process to
         // the start and end of the remaining buffer since it is less than 2
         // times the minimum size to process.
@@ -221,7 +226,7 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
             block_start_position = 0;
             block_end_position = samples_remaining - 1;
         }
-        
+
         // set the end position of the sub-block to process to the end of the
         // whole block if the whole block ends before the maximum cutoff point
         else if (samples_remaining <= MAX_BLOCK_END)
@@ -232,16 +237,16 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
             rand_num_upper_bound = samples_remaining - MIN_BLOCK_START;
             // get a random start position for the sub-block
             block_start_position = GetRandomNaturalNumber(rand_num_lower_bound,
-                    rand_num_upper_bound);
+                                                          rand_num_upper_bound);
             block_end_position = samples_remaining - 1;
         }
-        
-        // get random start and end positions for the sub-block to process
+
+            // get random start and end positions for the sub-block to process
         else
         {
             // get a random number for the start position
             block_start_position = GetRandomNaturalNumber(rand_num_lower_bound,
-                    rand_num_upper_bound);
+                                                          rand_num_upper_bound);
             // reset the lower bound for the random end position
             rand_num_lower_bound = block_start_position + MIN_BLOCK_START;
             /*
@@ -252,19 +257,19 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
             // the remaining buffer comes before the maximum sub-block size
             // (2 seconds) after the recently acquired start position.
             if (samples_remaining < (block_start_position + MAX_BLOCK_END -
-                MIN_BLOCK_START))
+                                     MIN_BLOCK_START))
                 rand_num_upper_bound = samples_remaining;
             // here the upper bound is set to the maximum sub-block size after
             // the start position, because the end of the remaining buffer is
             // beyond that point.
             else
                 rand_num_upper_bound = block_start_position + MAX_BLOCK_END -
-                        MIN_BLOCK_START - 1;
+                    MIN_BLOCK_START - 1;
             // get a random number for the end position
             block_end_position = GetRandomNaturalNumber(rand_num_lower_bound,
-                    rand_num_upper_bound);
+                                                        rand_num_upper_bound);
         }
-        
+
         // switch (or flag) for whether the sub-block should be reversed.
         short reverse = 0;
         // get a random state for reverse.  It receives 3 possible states:
@@ -291,7 +296,7 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
         // append the sub-block to the output buffer for the right channel
         CopySubBlock(kite->Output_Right, out_index, kite->Input_Right,
                      block_start_position, block_end_position);
-        
+
         /*
          * copy the block at the end of the current valid input buffer (the 
          * portion we are still working in--0 to samples remaining) (that is
@@ -306,8 +311,8 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
          * immediately following the sub-block end position.
          */
         // get the number of samples copied
-        unsigned long samples_copied = block_end_position - 
-                                       block_start_position + 1;
+        unsigned long samples_copied = block_end_position -
+                block_start_position + 1;
         // set the start index to the end section of input buffer that is
         // going to be copied over the used section
         unsigned long source_start = 0;
@@ -316,9 +321,9 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
         // of samples copied left in the remaining input buffer
         if (samples_remaining - samples_copied > block_end_position)
             source_start = samples_remaining - samples_copied;
-        // set the start index to the next position after the sub-block end
-        // position if there are less than the number of samples copied left
-        // in the remaining input buffer
+            // set the start index to the next position after the sub-block end
+            // position if there are less than the number of samples copied left
+            // in the remaining input buffer
         else
             source_start = block_end_position + 1;
 
@@ -329,7 +334,7 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
         // write over used section of right channel input
         CopySubBlock(kite->Input_Right, block_start_position,
                      kite->Input_Right, source_start, samples_remaining - 1);
-        
+
         // update the output index
         out_index += samples_copied;
         // update the number of samples remaining to be processed
@@ -339,9 +344,9 @@ void run_Kite(LADSPA_Handle instance, unsigned long total_samples)
 
 //-----------------------------------------------------------------------------
 
+
 /*
- * Frees dynamic memory associated with the plugin instance.  The host
- * better send the right pointer in or there's gonna be a leak!
+ * Frees dynamic memory associated with the plugin instance.
  */
 void cleanup_Kite(LADSPA_Handle instance)
 {
@@ -369,7 +374,7 @@ void _init()
      * in other words create an actual LADSPA_Descriptor struct instance that
      * Kite_descriptor will point to.
      */
-    Kite_descriptor = (LADSPA_Descriptor *) malloc(sizeof(LADSPA_Descriptor));
+    Kite_descriptor = (LADSPA_Descriptor *) malloc(sizeof (LADSPA_Descriptor));
 
     // make sure malloc worked properly before initializing the struct fields
     if (Kite_descriptor)
@@ -422,14 +427,14 @@ void _init()
         // allocate space for the temporary array with a length of the number
         // of ports (PortCount)
         temp_descriptor_array = (LADSPA_PortDescriptor *)
-                              calloc(PORT_COUNT, sizeof(LADSPA_PortDescriptor));
+                calloc(PORT_COUNT, sizeof (LADSPA_PortDescriptor));
 
         /*
          * set the instance LADSPA_PortDescriptor array (PortDescriptors)
          * pointer to the location temp_descriptor_array is pointing at.
          */
         Kite_descriptor->PortDescriptors = (const LADSPA_PortDescriptor *)
-                                           temp_descriptor_array;
+                temp_descriptor_array;
 
         /*
          * set the port properties by ORing specific bit masks defined in
@@ -440,9 +445,9 @@ void _init()
          * ports).
          */
         temp_descriptor_array[KITE_INPUT_LEFT] = LADSPA_PORT_INPUT |
-                                                 LADSPA_PORT_AUDIO;
+                LADSPA_PORT_AUDIO;
         temp_descriptor_array[KITE_INPUT_RIGHT] = LADSPA_PORT_INPUT |
-                                                  LADSPA_PORT_AUDIO;
+                LADSPA_PORT_AUDIO;
 
         /*
          * this gives the output ports the properties that tell the host that
@@ -451,9 +456,9 @@ void _init()
          * port...).
          */
         temp_descriptor_array[KITE_OUTPUT_LEFT] = LADSPA_PORT_OUTPUT |
-                                                  LADSPA_PORT_AUDIO;
+                LADSPA_PORT_AUDIO;
         temp_descriptor_array[KITE_OUTPUT_RIGHT] = LADSPA_PORT_OUTPUT |
-                                                   LADSPA_PORT_AUDIO;
+                LADSPA_PORT_AUDIO;
 
         /*
          * set temp_descriptor_array to NULL for housekeeping--we don't need
@@ -469,7 +474,7 @@ void _init()
         char ** temp_port_names;
 
         // allocate the space for two port names
-        temp_port_names = (char **) calloc(PORT_COUNT, sizeof(char *));
+        temp_port_names = (char **) calloc(PORT_COUNT, sizeof (char *));
 
         /*
          * set the instance PortNames array pointer to the location
@@ -481,7 +486,7 @@ void _init()
         temp_port_names[KITE_INPUT_LEFT] = strdup("Input Left Channel");
         temp_port_names[KITE_INPUT_RIGHT] = strdup("Input Right Channel");
 
-		// set the name of the ouput ports
+        // set the name of the ouput ports
         temp_port_names[KITE_OUTPUT_LEFT] = strdup("Output Left Channel");
         temp_port_names[KITE_OUTPUT_RIGHT] = strdup("Output Right Channel");
 
@@ -494,16 +499,16 @@ void _init()
          */
         LADSPA_PortRangeHint * temp_hints;
 
-        // allocate space for two port hints (see ladspa.h for info on 'hints')									
+        // allocate space for two port hints (see ladspa.h for info on 'hints')
         temp_hints = (LADSPA_PortRangeHint *)
-                     calloc(PORT_COUNT, sizeof(LADSPA_PortRangeHint));
+                calloc(PORT_COUNT, sizeof (LADSPA_PortRangeHint));
 
         /*
          * set the instance PortRangeHints pointer to the location temp_hints
          * is pointed at.
          */
         Kite_descriptor->PortRangeHints = (const LADSPA_PortRangeHint *)
-                                          temp_hints;
+                temp_hints;
 
         /*
          * set the port hint descriptors (which are ints).
@@ -530,6 +535,7 @@ void _init()
 
 //-----------------------------------------------------------------------------
 
+
 /*
  * Returns a descriptor of this plugin.
  *
@@ -545,6 +551,7 @@ const LADSPA_Descriptor * ladspa_descriptor(unsigned long index)
 }
 
 //-----------------------------------------------------------------------------
+
 
 /*
  * This is called automatically when the host quits (when this dynamic library
@@ -566,8 +573,8 @@ void _fini()
          * was hard coded for this plugin as 2, but whatever.
          */
         int i = 0;
-        for(i = 0; i < Kite_descriptor->PortCount; ++i)
-            free((char *)(Kite_descriptor->PortNames[i]));
+        for (i = 0; i < Kite_descriptor->PortCount; ++i)
+            free((char *) (Kite_descriptor->PortNames[i]));
 
         free((char **) Kite_descriptor->PortNames);
         free((LADSPA_PortRangeHint *) Kite_descriptor->PortRangeHints);
@@ -577,6 +584,7 @@ void _fini()
 }
 
 //-----------------------------------------------------------------------------
+
 
 /*
  * This function uses Richard Brent's uniform random number generator (see
@@ -606,8 +614,8 @@ unsigned long GetRandomNaturalNumber(unsigned long lower_bound,
      */
     unsigned long rand_num = 0;
     // seed the generator and retrieve a random number
-    rand_num = xor4096i((unsigned long)(current_time.tv_usec *
-               current_time.tv_sec));
+    rand_num = xor4096i((unsigned long) (current_time.tv_usec *
+                                         current_time.tv_sec));
     // reduce the random number to between 0 and the sample size
     rand_num = rand_num % (upper_bound - lower_bound + 1);
     // force the random number to at least the lower bound
@@ -617,6 +625,7 @@ unsigned long GetRandomNaturalNumber(unsigned long lower_bound,
 }
 
 //-----------------------------------------------------------------------------
+
 
 /*
  * This procedure takes a buffer (an array of floats) and resorts a subsection
@@ -638,6 +647,7 @@ void ApplyReverse(LADSPA_Data * buffer, unsigned long start, unsigned long end)
 }
 
 //-----------------------------------------------------------------------------
+
 
 /*
  * This procedure copies a section of an array of LADSPA_Data (floats) into a

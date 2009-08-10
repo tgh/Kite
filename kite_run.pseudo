@@ -1,3 +1,7 @@
+Tyler Hayes <tgh@pdx.edu>, August 2009
+Pseudo code for run_Kite() function of sb_kite.c (LADSPA plugin)
+
+
 early return error handling (samples, sample rate, instance is NULL)
 
 set constant minimum sub-block start to 0.25 * sample rate (0.25 seconds)
