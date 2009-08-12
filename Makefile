@@ -30,9 +30,9 @@ PLUGINS	=	sb_kite.so
 
 all: $(PLUGINS)
 
-sb_kite.o: sb_kite.c xorgens.c ladspa.h xorgens.h
+sb_kite.o: sb_kite.c ../xorgens.c ../ladspa.h ../xorgens.h
 	$(CC) $(CFLAGS) -c sb_kite.c
-	$(CC) $(CFLAGS) -c xorgens.c
+	$(CC) $(CFLAGS) -c ../xorgens.c
 
 sb_kite.so: sb_kite.o xorgens.o
 	$(CC) $(LDFLAGS) -o sb_kite.so sb_kite.o xorgens.o
