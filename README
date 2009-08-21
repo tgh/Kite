@@ -34,8 +34,6 @@ Thanks to Richard Furse and company for creating ladspa.h, and thanks to Bart
 Massey at Portland State University for suggesting LADSPA plugins as a good
 open source project to work on.  He also helped me get the correct flags in
 the Makefile in order to produce a working shared object file.
-Also thanks to Richard Brent for his uniform random number generator.
-(http://wwwmaths.anu.edu.au/~brent/random.html)
 
 I am still a student programmer at the time of this writing, so some of the
 comments in the source code are detailed and directed at the beginner as well.
